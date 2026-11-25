@@ -1,0 +1,70 @@
+This executable file is used to show a special picture at boot phase.
+
+WHAT IT DOES?
+=============
+Show the second boot logo
+
+HOW IT WAS BUILT?
+==================
+It needs the following library from AOSP:
+1. libcutils.so
+2. libutils.so
+3. libc.so
+4. libstdc++.so
+5. libdl.so
+6. liblog.so
+7. libz.so
+
+and the following libs from MediaTek:
+1. libshowlogo.so
+
+[Build Method]
+mmm vendor/mediatek/proprietary/external/boot_logo_updater
+
+HOW TO USE IT?
+==============
+Defined at init.rc and activated by init process.
+
+###################
+
+bit map text rendering :
+Normal white 
+bitmap[offset + 0] = (alpha * 255 + (255 - alpha) * bitmap[offset + 0]) / 255;
+bitmap[offset + 1] = (alpha * 255 + (255 - alpha) * bitmap[offset + 1]) / 255;
+bitmap[offset + 2] = (alpha * 255 + (255 - alpha) * bitmap[offset + 2]) / 255;
+ 
+Normal red 
+bitmap[offset + 0] = (alpha * 255 + (255 - alpha) * bitmap[offset + 0]) / 255; // Red
+bitmap[offset + 1] = (alpha * 0   + (255 - alpha) * bitmap[offset + 1]) / 255; // Green
+bitmap[offset + 2] = (alpha * 0   + (255 - alpha) * bitmap[offset + 2]) / 255; // Blue
+ 
+Normal black
+bitmap[offset + 0] = (alpha * 0 + (255 - alpha) * bitmap[offset + 0]) / 255;
+bitmap[offset + 1] = (alpha * 0 + (255 - alpha) * bitmap[offset + 1]) / 255;
+bitmap[offset + 2] = (alpha * 0 + (255 - alpha) * bitmap[offset + 2]) / 255;
+ 
+for Bold need to add this for loop (to thicker more increase < 2 to 3/4/5/6)
+ 
+        if (glyph) {
+for (int bold_offset = 0; bold_offset < 2; ++bold_offset) {  // Simulate bold
+                for (int gy = 0; gy < h; ++gy) {
+                    for (int gx = 0; gx < w; ++gx) {
+                        int px = x + gx + xoff + bold_offset;
+                         int py = y1 + baseline + gy + yoff;
+                         if (px >= 0 && px < width && py >= 0 && py < height) {
+                            int offset = py * stride + px * 3;
+                            uint8_t alpha = glyph[gy * w + gx];
+                            bitmap[offset + 0] = (alpha * 255 + (255 - alpha) * bitmap[offset + 0]) / 255;
+                            bitmap[offset + 1] = (alpha * 255 + (255 - alpha) * bitmap[offset + 1]) / 255;
+                            bitmap[offset + 2] = (alpha * 255 + (255 - alpha) * bitmap[offset + 2]) / 255;
+                        }
+                    }
+                }
+}}
+ 
+ 
+ 
+ 
+and for Font size   
+ 
+float scale = stbtt_ScaleForPixelHeight(&font, 40); 

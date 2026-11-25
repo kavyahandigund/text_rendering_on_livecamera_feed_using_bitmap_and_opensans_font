@@ -1,0 +1,86 @@
+void render_boot_message_on_bitmap(uint8_t *bitmap, int width, int height) {
+    const char *line1 = "Please Reverse Carefully. System is booting,";
+    const char *line2 = "remaining functions will be available shortly...";
+    int stride = width * 3;
+    
+
+    stbtt_fontinfo font;
+    if (!stbtt_InitFont(&font, opensans_regular_ttf, 
+                        stbtt_GetFontOffsetForIndex(opensans_regular_ttf, 0))) {
+        LOG_BOOT_PROFILE("failed to initialize embedded font");
+        return;
+    }
+    
+    LOG_BOOT_PROFILE(" font loaded from embedded data");
+    
+    float scale = stbtt_ScaleForPixelHeight(&font, 40);
+    int ascent;
+    stbtt_GetFontVMetrics(&font, &ascent, NULL, NULL);
+    int baseline = (int)(ascent * scale);
+    
+    int x1 = (width - (int)strlen(line1) * 20) / 2 + 180;
+    int x2 = (width - (int)strlen(line2) * 20) / 2 + 220;
+    int y1 = 50;  
+    int y2 = y1 + 50;  
+
+
+    // Render line1
+    int x = x1;
+    for (int i = 0; line1[i] != '\0'; ++i) {
+        int w, h, xoff, yoff;
+        unsigned char* glyph = stbtt_GetCodepointBitmap(&font, 0, scale, line1[i], &w, &h, &xoff, &yoff);
+        if (glyph) {
+        for(int bold_offset = 0; bold_offset < 4; ++bold_offset){
+            for (int gy = 0; gy < h; ++gy) {
+                for (int gx = 0; gx < w; ++gx) {
+                    int px = x + gx + xoff + bold_offset; //for bold
+                    int py = y1 + baseline + gy + yoff;
+                    if (px >= 0 && px < width && py >= 0 && py < height) {
+                        int offset = py * stride + px * 3;
+                        uint8_t alpha = glyph[gy * w + gx];
+                           bitmap[offset + 0] = (alpha * 255 + (255 - alpha) * bitmap[offset + 0]) / 255;
+                           bitmap[offset + 1] = (alpha * 255 + (255 - alpha) * bitmap[offset + 1]) / 255;
+                           bitmap[offset + 2] = (alpha * 255 + (255 - alpha) * bitmap[offset + 2]) / 255;
+                    }
+                }
+            }
+          }
+            stbtt_FreeBitmap(glyph, NULL);
+        }
+        
+        int advance, lsb;
+        stbtt_GetCodepointHMetrics(&font, line1[i], &advance, &lsb);
+        x += (int)(advance * scale);
+    }
+    
+    // Render line2
+    x = x2;
+    for (int i = 0; line2[i] != '\0'; ++i) {
+        int w, h, xoff, yoff;
+        unsigned char* glyph = stbtt_GetCodepointBitmap(&font, 0, scale, line2[i], &w, &h, &xoff, &yoff);
+        if (glyph) {
+          for (int bold_offset = 0; bold_offset < 4; ++bold_offset){
+            for (int gy = 0; gy < h; ++gy) {
+                for (int gx = 0; gx < w; ++gx) {
+                    int px = x + gx + xoff + bold_offset;  //for bold
+                    int py = y2 + baseline + gy + yoff;
+                    if (px >= 0 && px < width && py >= 0 && py < height) {
+                        int offset = py * stride + px * 3;
+                        uint8_t alpha = glyph[gy * w + gx];
+                      bitmap[offset + 0] = (alpha * 255 + (255 - alpha) * bitmap[offset + 0]) / 255;
+                      bitmap[offset + 1] = (alpha * 255 + (255 - alpha) * bitmap[offset + 1]) / 255;
+                      bitmap[offset + 2] = (alpha * 255 + (255 - alpha) * bitmap[offset + 2]) / 255;
+                    }
+                }
+            }
+        }
+            stbtt_FreeBitmap(glyph, NULL);
+        }
+        
+        int advance, lsb;
+        stbtt_GetCodepointHMetrics(&font, line2[i], &advance, &lsb);
+        x += (int)(advance * scale);
+    }
+    
+    LOG_BOOT_PROFILE(" done with render_boot_message_on_bitmap");
+}
